@@ -11,6 +11,11 @@ Copy-Item -LiteralPath $executable -Destination (Join-Path $staging 'WANanalyzer
 foreach ($document in @('LICENSE','README.md','CHANGELOG.md','VALIDATION.md','NATIVE_SPEED_TESTS.md','PRD.md','TECHNICAL_RESEARCH.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $document) -Destination $staging
 }
+foreach ($image in @('assets/wanalyzer.png','docs/images/monitor.png')) {
+    $destination = Join-Path $staging $image
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $projectRoot $image) -Destination $destination
+}
 New-Item -ItemType Directory -Path (Join-Path $staging 'assets/webview2-notices') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'assets/THIRD_PARTY_NOTICES.txt') -Destination (Join-Path $staging 'assets')
 foreach ($notice in @('LICENSE.txt','NOTICE.txt')) {

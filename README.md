@@ -1,6 +1,10 @@
-# WANanalyzer
+# <img src="assets/wanalyzer.png" width="48" height="48" alt=""> WANanalyzer
 
 A Rust Windows desktop network monitor with continuous latency, traceroute, per-hop packet loss, local history, and native speed-test cards backed by four genuine providers.
+
+![WANanalyzer Monitor interface showing four target cards, an eight-hop traceroute with per-hop packet loss, and latency and loss charts](docs/images/monitor.png)
+
+*Monitor view with live target summaries, per-hop statistics, and latency/loss charts.*
 
 **Early preview for Windows 10/11 x64.** See [validation and remaining qualification](VALIDATION.md) before relying on a release for extended monitoring.
 
