@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.rs text eol=lf
+*.js text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
+*.dll binary
+*.ico binary
+*.png binary
+assets/THIRD_PARTY_NOTICES.txt -whitespace
+assets/webview2-notices/LICENSE.txt -whitespace

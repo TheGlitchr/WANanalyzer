@@ -1,0 +1,18 @@
+{
+  "active": false,
+  "complete": true,
+  "fields": {
+    "server": "Example server"
+  },
+  "origin": "https://wifiman.com",
+  "phase": "Reading completed result",
+  "text": "Test Result\nInternet\nThis device\n674.3Mbps\n790.56Mbps\nPing: 23 ms\nTest Server\nExample server",
+  "expected": {
+    "download": 674.3,
+    "upload": 790.56,
+    "ping": 23,
+    "download_loaded": null,
+    "upload_loaded": null,
+    "loaded": null
+  }
+}

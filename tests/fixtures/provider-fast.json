@@ -1,0 +1,22 @@
+{
+  "active": false,
+  "complete": true,
+  "fields": {
+    "download": "800 Mbps",
+    "loaded": "26 ms",
+    "ping": "16 ms",
+    "server": "Example server",
+    "upload": "750 Mbps"
+  },
+  "origin": "https://fast.com",
+  "phase": "Uploading",
+  "text": "Download 800 Mbps\nUpload 750 Mbps\nUnloaded 16 ms\nLoaded 26 ms",
+  "expected": {
+    "download": 800,
+    "upload": 750,
+    "ping": 16,
+    "download_loaded": null,
+    "upload_loaded": null,
+    "loaded": 26
+  }
+}

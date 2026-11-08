@@ -1,0 +1,22 @@
+{
+  "active": false,
+  "complete": true,
+  "fields": {
+    "assessment": "Your latency increased slightly under load",
+    "download": "Download\n\n528.72\n\nmbps\n\n10.70\n\nms",
+    "latency": "Latency\n\n20.90\n\nms",
+    "upload": "Upload\n\n540.49\n\nmbps\n\n10.70\n\nms",
+    "server": "Example server"
+  },
+  "origin": "https://devina.io",
+  "phase": "Measuring idle, download-loaded and upload-loaded latency",
+  "text": "Your latency increased slightly under load\nLatency\n\n20.90\n\nms\nDownload\n\n528.72\n\nmbps\n\n10.70\n\nms\nUpload\n\n540.49\n\nmbps\n\n10.70\n\nms",
+  "expected": {
+    "download": 528.72,
+    "upload": 540.49,
+    "ping": 20.9,
+    "download_loaded": 31.599999999999998,
+    "upload_loaded": 31.599999999999998,
+    "loaded": null
+  }
+}

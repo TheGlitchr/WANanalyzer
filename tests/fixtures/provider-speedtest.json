@@ -1,0 +1,24 @@
+{
+  "active": false,
+  "complete": true,
+  "fields": {
+    "download": "694.83 Mbps",
+    "download_latency": "158 ms",
+    "ping": "13 ms",
+    "result_text": "DOWNLOAD Mbps\n\n694.83\n\nUPLOAD Mbps\n\n727.27\n\nPing ms\n\n13\n158\n25\n",
+    "upload": "727.27 Mbps",
+    "upload_latency": "25 ms",
+    "server": "Example server"
+  },
+  "origin": "https://www.speedtest.net",
+  "phase": "Selecting test server",
+  "text": "DOWNLOAD Mbps\n\n694.83\n\nUPLOAD Mbps\n\n727.27\n\nPing ms\n\n13\n158\n25\n",
+  "expected": {
+    "download": 694.83,
+    "upload": 727.27,
+    "ping": 13,
+    "download_loaded": 158,
+    "upload_loaded": 25,
+    "loaded": null
+  }
+}

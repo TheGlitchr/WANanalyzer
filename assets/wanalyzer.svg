@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>WANanalyzer Signal Orbit</title>
+  <desc>A mint waveform W connects two network nodes inside a blue routing orbit.</desc>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#24374c"/><stop offset="1" stop-color="#101827"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#50dcaa"/><stop offset="1" stop-color="#68e8f4"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="54" fill="url(#tile)"/>
+  <rect x="10" y="10" width="236" height="236" rx="52" fill="none" stroke="#537a95" stroke-opacity=".5" stroke-width="2"/>
+  <path d="M 204.14 163.50 A 84 84 0 1 1 176.18 59.19" fill="none" stroke="#578bc1" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 49 103 L 84 166 L 126 91 L 168 166 L 207 84" fill="none" stroke="url(#signal)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="49" cy="103" r="11" fill="#d9fff0"/>
+  <circle cx="207" cy="84" r="12" fill="#c8f9ff"/>
+  <circle cx="207" cy="84" r="5" fill="#338cab"/>
+  <circle cx="176.18" cy="59.19" r="7" fill="#88baff"/>
+</svg>
