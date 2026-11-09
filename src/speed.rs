@@ -990,7 +990,7 @@ mod tests {
     #[test]
     fn provider_navigation_checks_scheme_host_and_path() {
         for provider in PROVIDERS {
-            assert!(provider.allows(provider.url()));
+            assert_eq!(provider.allows(provider.url()), provider != Provider::Iperf);
             for bad in [
                 "http://wifiman.com/",
                 "https://wifiman.com.evil.example/",
