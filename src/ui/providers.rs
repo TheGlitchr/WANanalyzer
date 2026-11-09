@@ -376,7 +376,7 @@ impl App {
                         result_row(ui, "Measured streams", details.selected_streams.to_string());
                         line(ui, format!("Clouvider {} | {} seconds per direction", details.location, details.duration_seconds), MUTED);
                     }
-                    ui.small("Uses full bandwidth and can transfer several GB. Auto tune takes about 75 seconds, longer if rechecking sustained speed.");
+                    ui.small("Uses full bandwidth and can transfer several GB. Auto tune compares two sustained download profiles and takes about 100 seconds.");
                     ui.small("Clouvider: 10 Gbps best effort. More streams cannot guarantee line rate. ICMP monitoring continues.");
                     return;
                 }

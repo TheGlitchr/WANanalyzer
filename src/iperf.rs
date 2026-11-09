@@ -602,27 +602,17 @@ impl Runner<'_> {
     }
 }
 fn choose_streams(phases: &[IperfPhase]) -> Option<u16> {
-    let best = phases
-        .iter()
-        .filter(|p| p.calibration && p.direction == "download")
-        .map(|p| p.receiver_mbps)
-        .max_by(f64::total_cmp)?;
-    // Prefer fewer streams if the result is within 3% of the best short trial.
     phases
         .iter()
-        .filter(|p| p.calibration && p.direction == "download" && p.receiver_mbps >= best * 0.97)
-        .map(|p| p.streams)
-        .min()
-}
-fn alternate_streams(phases: &[IperfPhase], chosen: u16, measured_mbps: f64) -> Option<u16> {
-    let best = phases
-        .iter()
         .filter(|p| p.calibration && p.direction == "download")
-        .map(|p| p.receiver_mbps)
-        .max_by(f64::total_cmp)?;
-    if measured_mbps >= best * 0.85 {
-        return None;
-    }
+        .max_by(|a, b| {
+            a.receiver_mbps
+                .total_cmp(&b.receiver_mbps)
+                .then_with(|| b.streams.cmp(&a.streams))
+        })
+        .map(|p| p.streams)
+}
+fn alternate_streams(phases: &[IperfPhase], chosen: u16) -> Option<u16> {
     phases
         .iter()
         .filter(|p| p.calibration && p.direction == "download" && p.streams != chosen)
@@ -718,11 +708,10 @@ fn execute(
         runner.metadata.selected_streams = streams;
         let download = runner.measure(&server, streams, options.seconds, false, true)?;
         run.download_mbps = Some(download.receiver_mbps);
-        // A short trial can overestimate sustained speed. Compare one alternate
-        // full-duration profile when throughput drops markedly, leaving time for upload.
+        // Compare the two strongest short-trial profiles over full durations,
+        // leaving time for upload. Only sustained measurements populate the main result.
         if options.auto_tune
-            && let Some(alternate) =
-                alternate_streams(&runner.metadata.phases, streams, download.receiver_mbps)
+            && let Some(alternate) = alternate_streams(&runner.metadata.phases, streams)
             && runner.deadline.saturating_duration_since(Instant::now())
                 > Duration::from_secs(2 * (u64::from(options.seconds) + 14))
         {
@@ -780,7 +769,7 @@ mod tests {
         assert!(parse_phase(&bad, 5203, 8, 20, true, false).is_err());
     }
     #[test]
-    fn tuning_uses_smallest_stream_count_within_three_percent_of_peak() {
+    fn tuning_chooses_peak_throughput_and_compares_a_distinct_runner_up() {
         let mut trials = Vec::new();
         for (streams, speed) in [(8, 700.), (16, 950.), (32, 960.), (64, 970.), (128, 900.)] {
             let mut trial =
@@ -788,9 +777,9 @@ mod tests {
             trial.streams = streams;
             trials.push(trial);
         }
-        assert_eq!(choose_streams(&trials), Some(16));
-        assert_eq!(alternate_streams(&trials, 16, 700.), Some(64));
-        assert_eq!(alternate_streams(&trials, 16, 950.), None);
+        assert_eq!(choose_streams(&trials), Some(64));
+        assert_eq!(alternate_streams(&trials, 64), Some(32));
+        assert_eq!(alternate_streams(&[], 64), None);
         assert_eq!(choose_streams(&[]), None);
     }
     #[test]
