@@ -945,8 +945,20 @@ mod tests {
         );
         drop(task);
         drop(monitor);
+        // Monitor owns writer shutdown; reopening verifies actual restart durability.
+        drop(store);
+        let reopened = Store::open(&directory, "iperf-validation-restart").unwrap();
+        assert!(
+            reopened
+                .speeds()
+                .unwrap()
+                .iter()
+                .any(|run| run.id == result.run.id
+                    && run.status == "completed"
+                    && run.details == result.run.details)
+        );
         let (tx, rx) = bounded(1);
-        store.tx.send(Write::Close(tx)).unwrap();
+        reopened.tx.send(Write::Close(tx)).unwrap();
         rx.recv_timeout(Duration::from_secs(5)).unwrap();
     }
 }
