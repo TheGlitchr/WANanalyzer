@@ -56,6 +56,11 @@ impl App {
                         .show(ui, |ui| {
                             let gap = 12.;
                             let columns = if ui.available_width() < 560. { 1 } else { 2 };
+                            let iperf_height = if ui.available_width() < 600. {
+                                390.
+                            } else {
+                                310.
+                            };
                             let card = Vec2::new(
                                 (ui.available_width() - gap * (columns - 1) as f32)
                                     / columns as f32,
@@ -74,7 +79,7 @@ impl App {
                                     egui::Rect::from_min_size(
                                         position,
                                         if *provider == Provider::Iperf {
-                                            Vec2::new(ui.available_width(), 310.)
+                                            Vec2::new(ui.available_width(), iperf_height)
                                         } else {
                                             card
                                         },
@@ -87,7 +92,8 @@ impl App {
                                     card.x * columns as f32 + gap * (columns - 1) as f32,
                                     card.y * PROVIDERS.len().div_ceil(columns) as f32
                                         + gap * (PROVIDERS.len().div_ceil(columns) - 1) as f32
-                                        + 64.,
+                                        + iperf_height
+                                        - card.y,
                                 ),
                             ));
                         });
