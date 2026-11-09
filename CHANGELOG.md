@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — iPerf preview
+
+- Added a fifth native iPerf3/Clouvider test method, with latency-based location selection and busy-port failover across 5200–5209.
+- Added automatic 8–128-stream download calibration, manual stream/duration controls, separate full download/upload measurements, and structured history/export details.
+- Embedded a pinned Windows iPerf3 engine and runtime with process supervision, cancellation, timeouts, license notices, and accompanying source archives.
+
 ## 0.1.0 — Preview
 
 - Portable Rust desktop app for Windows 10/11 x64 with a bundled Signal Orbit icon.

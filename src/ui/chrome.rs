@@ -264,7 +264,7 @@ impl App {
                 .max_height((size.y - 190.).clamp(100., 520.))
                 .auto_shrink([false,true]).show(ui,|ui|{
             ui.label("Continuous latency, traceroute, per-hop reply loss, and local history in one portable Windows app.");
-            ui.label("Native speed-test cards use WiFiman, Speedtest.net, FAST.com, and Devina bufferbloat. Every attempt is logged, including cancellation and failure.");
+            ui.label("Native speed-test cards use WiFiman, Speedtest.net, FAST.com, Devina bufferbloat, and iPerf3 with Clouvider servers. Every attempt is logged, including cancellation and failure.");
             ui.small("Provider adapters read rendered page results in a background browser. Capture is experimental and depends on provider layouts. An optional browser view handles interaction. This app is independent of the providers and has no provider endorsement.");
             ui.separator();
             ui.strong("Keyboard shortcuts");

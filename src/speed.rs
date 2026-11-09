@@ -95,12 +95,14 @@ pub enum Provider {
     Speedtest,
     Fast,
     Devina,
+    Iperf,
 }
-pub const PROVIDERS: [Provider; 4] = [
+pub const PROVIDERS: [Provider; 5] = [
     Provider::WiFiman,
     Provider::Speedtest,
     Provider::Fast,
     Provider::Devina,
+    Provider::Iperf,
 ];
 impl Provider {
     pub fn from_key(key: &str) -> Option<Self> {
@@ -109,6 +111,7 @@ impl Provider {
             "speedtest" | "speedtest.net" => Some(Self::Speedtest),
             "fast" | "fast.com" => Some(Self::Fast),
             "devina" | "bufferbloat" => Some(Self::Devina),
+            "iperf" | "iperf3" | "clouvider" => Some(Self::Iperf),
             _ => None,
         }
     }
@@ -118,6 +121,7 @@ impl Provider {
             Self::Speedtest => "Speedtest.net",
             Self::Fast => "FAST.com",
             Self::Devina => "Devina bufferbloat",
+            Self::Iperf => crate::iperf::PROVIDER,
         }
     }
     pub fn url(self) -> &'static str {
@@ -126,6 +130,7 @@ impl Provider {
             Self::Speedtest => "https://www.speedtest.net/",
             Self::Fast => "https://fast.com/",
             Self::Devina => "https://devina.io/speed-test",
+            Self::Iperf => "https://as62240.net/speedtest",
         }
     }
     fn allows(self, uri: &str) -> bool {
@@ -140,6 +145,7 @@ impl Provider {
             return false;
         }
         match self {
+            Self::Iperf => false,
             Self::WiFiman => url.host_str() == Some("wifiman.com") && url.path() == "/",
             Self::Speedtest => {
                 matches!(url.host_str(), Some("www.speedtest.net" | "speedtest.net"))
@@ -984,7 +990,7 @@ mod tests {
     #[test]
     fn provider_navigation_checks_scheme_host_and_path() {
         for provider in PROVIDERS {
-            assert!(provider.allows(provider.url()));
+            assert_eq!(provider.allows(provider.url()), provider != Provider::Iperf);
             for bad in [
                 "http://wifiman.com/",
                 "https://wifiman.com.evil.example/",

@@ -1,6 +1,6 @@
 [package]
 name = "wanalyzer"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 publish = false
 description = "Portable Windows latency, per-hop packet loss, and speed-test monitor"
@@ -17,7 +17,7 @@ egui_extras = { version = "=0.37.0", default-features = false }
 raw-window-handle = "0.6"
 rusqlite = { version = "0.41.1", features = ["bundled", "backup"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
 uuid = { version = "1", features = ["v4"] }
 rfd = "0.17"
 webbrowser = "1"
@@ -25,7 +25,7 @@ regex = "1"
 url = "2"
 webview2-com = "0.39.1"
 windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_Com", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse"] }
-windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_System_IO", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Security", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_System_IO", "Win32_System_Threading", "Win32_System_JobObjects", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"] }
 
 [profile.release]
 lto = "thin"

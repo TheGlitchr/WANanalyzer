@@ -1,6 +1,6 @@
 # <img src="assets/wanalyzer.png" width="48" height="48" alt=""> WANanalyzer
 
-A Rust Windows desktop network monitor with continuous latency, traceroute, per-hop packet loss, local history, and native speed-test cards backed by four genuine providers.
+A Rust Windows desktop network monitor with continuous latency, traceroute, per-hop packet loss, local history, and five native speed-test methods.
 
 ![WANanalyzer Monitor interface showing four target cards, an eight-hop traceroute with per-hop packet loss, and latency and loss charts](docs/images/monitor.png)
 
@@ -26,7 +26,7 @@ The app opens maximized at 90% interface scale. Target cards show route/probe st
 
 ## Speed tests
 
-The tab presents four native cards with **Run** buttons: **WiFiman**, **Speedtest.net**, **FAST.com**, and **Devina bufferbloat**. The genuine provider runs in a background WebView2 browser while the app reads its rendered results. Only one speed test runs at a time; monitoring continues independently.
+The tab presents native cards with **Run** buttons: **WiFiman**, **Speedtest.net**, **FAST.com**, **Devina bufferbloat**, and **iPerf3 / Clouvider**. Website providers run in a background WebView2 browser while the app reads their rendered results. iPerf uses a bundled native-process engine. Only one speed test runs at a time; monitoring continues independently.
 
 Every attempt enters **Test history** on the left, including canceled and failed runs. All providers use the same single-line log fields; longer text truncates with a tooltip. Click a result or **Details** to see its measurements, capture notes, and provider text. **All attempts / Saved results** filters the log; **Show log** controls its visibility.
 
@@ -34,12 +34,13 @@ Every attempt enters **Test history** on the left, including canceled and failed
 - Speedtest.net also supplies idle, download-loaded, and upload-loaded latency.
 - FAST provides unloaded latency and one loaded-latency measurement. It does not identify separate loaded values for both directions, so the app keeps that value separate.
 - Devina supplies idle latency and added delay under download/upload load. The app displays each loaded total as idle plus the corresponding reported increase, retaining both values in history.
+- iPerf3 chooses the lowest-latency responsive Clouvider location, retries available ports 5200–5209 using real test attempts, and measures TCP download and upload separately. **Auto tune** compares 8, 16, 32, 64, and 128 download streams, compares the two strongest profiles over full-duration downloads when time permits, and uploads at the faster sustained profile's count. Turn it off to choose 1–128 streams manually. Measured duration is configurable from 10–60 seconds per direction, excluding warm-up; the default is 20. All trials, port attempts, receiver summaries, retransmits, and available CPU statistics are retained in Details and JSON exports. See [iPerf architecture and tuning](IPERF.md).
 
 A `--` means a measurement was not reported; native ICMP results are never substituted for provider latency. Values from different providers use different paths and methods.
 
 The website is hidden by default. **Show provider page** opens the active provider inside the main window for consent, interaction, or troubleshooting; **Back to results** returns to native cards. Visible pages retain **25% zoom**. Press **F6** inside the browser to return keyboard focus to app controls. **Cancel** stops and logs the active attempt.
 
-An existing **Microsoft WebView2 Runtime** is required; nothing is installed automatically. The EXE embeds the Microsoft-signed loader and extracts it when needed. Logs, settings, browser cache, and the loader are generated runtime files beside the portable EXE's data folder.
+An existing **Microsoft WebView2 Runtime** is required for the four website providers; iPerf works independently of WebView2. Nothing is installed automatically. The EXE embeds the Microsoft-signed loader and the pinned iPerf3 engine/Cygwin runtime, extracting them into its data directory when needed. Logs, settings, browser cache, and extracted runtime files are normal portable data. iPerf has a visible full-bandwidth notice, can transfer several GB, and only starts when you click Run.
 
 Capture is experimental and versioned: each adapter waits for a fresh active test and two matching completed measurements. Provider layout changes, challenges, or unreported measurements can prevent capture; the app records the failure rather than inventing a result. Provider notices remain accessible in the optional browser view. No remote host objects or filesystem/shell bridge are exposed.
 
@@ -88,7 +89,7 @@ For focused diagnostics without a GUI:
 
 ## Implementation status and remaining qualification
 
-Implemented: Windows ICMP worker pool, paced scheduler (40 probes/s, at most 32 in flight), automatic targets/gateway, repeated TTL measurements, per-hop PL tracking, pause/resume, native charts, settings, SQLite batching/recovery, exports, four provider adapters, and durable speed/loaded-latency results in a uniform native UI.
+Implemented: Windows ICMP worker pool, paced scheduler (40 probes/s, at most 32 in flight), automatic targets/gateway, repeated TTL measurements, per-hop PL tracking, pause/resume, native charts, settings, SQLite batching/recovery, exports, four browser-provider adapters, iPerf3/Clouvider stream tuning, and durable speed/loaded-latency results in a uniform native UI.
 
 Differences from the full proposed v1: IPv4/x64 only; network changes are reconciled by polling every five seconds rather than native notifications; DNS uses a background Windows resolver; historical charts use the latest segment, and long-range rollups are pending. Data-folder recovery UX, comprehensive suspension/cancellation qualification, 24-hour soak, Windows 10 clean-VM validation, code signing, graphics compatibility, and the full dependency/license inventory still need release qualification.
 
@@ -102,6 +103,6 @@ Research and implementation started November 7, 2026. No Ubiquiti affiliation or
 
 ## License and contributions
 
-WANanalyzer's original code and artwork are available under the [MIT License](LICENSE). Dependencies retain their own licenses; releases include [third-party notices](assets/THIRD_PARTY_NOTICES.txt) and the WebView2 loader's license and notices. External speed-test services remain subject to their own terms.
+WANanalyzer's original code and artwork are available under the [MIT License](LICENSE). Dependencies retain their own licenses; release ZIPs include [third-party notices](assets/THIRD_PARTY_NOTICES.txt), the WebView2 loader's license and notices, and [iPerf/Cygwin notices and corresponding source](assets/iperf3/NOTICES.txt). Keep these materials with redistributed releases. External speed-test services remain subject to their own terms.
 
 Report bugs with your Windows version, app version, reproduction steps, and relevant error text. Review exported logs and screenshots before attaching them: network measurements can contain IP addresses, hostnames, and provider details. Local logs, browser profiles, caches, and build outputs are excluded from the source repository.

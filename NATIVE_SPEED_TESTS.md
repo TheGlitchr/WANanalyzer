@@ -2,6 +2,8 @@
 
 The native UI now owns the four test cards and shared history. WiFiman, Speedtest.net, FAST.com, and Devina remain the actual measurement backends. A real WebView2 document runs each provider; no separate browser window, bundled Chromium installation, copied test engine, or OCR is required.
 
+The iPerf revision adds a fifth card backed by a bundled, supervised process rather than WebView2. See [iPerf tuning and execution](IPERF.md). The browser-specific behavior below applies to the original four methods; all five share one active-test guard and durable history.
+
 ## Execution and capture
 
 Clicking Run creates a durable attempt before opening the provider. Each adapter starts the provider through its ordinary page controls (or observes an automatic start), polls rendered DOM text/attributes, and recognizes completion. Completion requires a new active test followed by two matching result snapshots. Unknown or incomplete results are not recorded as successful measurements.

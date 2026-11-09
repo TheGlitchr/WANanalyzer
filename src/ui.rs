@@ -64,6 +64,8 @@ pub struct App {
     active_speed: Option<SpeedRun>,
     quit_at: Option<Instant>,
     browser: Option<crate::speed::Browser>,
+    iperf: Option<crate::iperf::Task>,
+    iperf_options: crate::iperf::Options,
     about_open: bool,
     notices_page: usize,
 }
@@ -148,6 +150,8 @@ impl App {
             settings_open: false,
             active_speed: None,
             browser: None,
+            iperf: None,
+            iperf_options: crate::iperf::Options::default(),
             about_open: false,
             notices_page: 0,
             quit_at: smoke_secs.map(|s| Instant::now() + Duration::from_secs(s)),
@@ -310,7 +314,7 @@ impl App {
             .join("; ")
     }
     fn run_speed(&mut self, provider: crate::speed::Provider) {
-        if self.browser.is_some() || self.active_speed.is_some() {
+        if self.browser.is_some() || self.iperf.is_some() || self.active_speed.is_some() {
             return;
         }
         self.show_provider_page = false;
@@ -326,21 +330,36 @@ impl App {
             ping_ms: None,
             server: String::new(),
             result_url: String::new(),
-            capture_method: "experimental_provider_dom_v2".into(),
+            capture_method: if provider == crate::speed::Provider::Iperf {
+                "iperf3_json_v1"
+            } else {
+                "experimental_provider_dom_v2"
+            }
+            .into(),
             start_context: self.context(),
             end_context: String::new(),
             details: SpeedDetails::default(),
         };
         match self.store.speed(run.clone()) {
             Ok(()) => {
-                self.browser = Some(crate::speed::start(
-                    self.directory.clone(),
-                    self.store.clone(),
-                    run.clone(),
-                    self.monitor.shared.clone(),
-                    self.parent,
-                    provider,
-                ));
+                if provider == crate::speed::Provider::Iperf {
+                    self.iperf = Some(crate::iperf::Task::start(
+                        self.directory.clone(),
+                        self.store.clone(),
+                        run.clone(),
+                        self.monitor.shared.clone(),
+                        self.iperf_options.clone(),
+                    ));
+                } else {
+                    self.browser = Some(crate::speed::start(
+                        self.directory.clone(),
+                        self.store.clone(),
+                        run.clone(),
+                        self.monitor.shared.clone(),
+                        self.parent,
+                        provider,
+                    ));
+                }
                 self.active_speed = Some(run);
                 self.speeds = self.store.speeds().unwrap_or_default();
                 self.notify(
@@ -361,11 +380,16 @@ impl App {
         if let Some(browser) = &mut self.browser {
             browser.tick();
         }
-        let result = self.browser.as_mut().and_then(|b| b.take_result());
+        let result = self
+            .browser
+            .as_mut()
+            .and_then(|b| b.take_result())
+            .or_else(|| self.iperf.as_ref().and_then(|task| task.take_result()));
         let Some(result) = result else {
             return;
         };
         self.browser = None;
+        self.iperf = None;
         self.show_provider_page = false;
         let run = result.run;
         if let Some(error) = result.error {
@@ -399,6 +423,9 @@ impl App {
     fn cancel_speed(&mut self) {
         if let Some(browser) = &mut self.browser {
             browser.cancel();
+        }
+        if let Some(iperf) = &self.iperf {
+            iperf.cancel();
         }
     }
     fn retry_speed_save(&mut self) {
@@ -808,6 +835,7 @@ impl Drop for App {
             let _ = job.result.recv_timeout(Duration::from_secs(10));
         }
         self.browser.take();
+        self.iperf.take();
     }
 }
 impl eframe::App for App {

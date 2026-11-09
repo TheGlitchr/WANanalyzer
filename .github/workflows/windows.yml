@@ -1,10 +1,19 @@
 name: Windows build and tests
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      live_iperf:
+        description: 'Also run the public Clouvider functional test (uses full bandwidth on this runner)'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   windows-msvc:
     runs-on: windows-2022
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -13,6 +22,8 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
+      - if: github.event_name == 'workflow_dispatch' && inputs.live_iperf
+        run: cargo test --locked --lib iperf::tests::live_clouvider_auto_tune_with_monitoring_and_durable_history -- --ignored --nocapture
       - run: ./scripts/build.ps1 -Toolchain msvc
       - run: ./scripts/package-release.ps1
       - uses: actions/upload-artifact@v4

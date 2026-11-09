@@ -29,6 +29,7 @@ try {
     }
     [void]$notices.AppendLine("`nRust standard library: MIT OR Apache-2.0; https://github.com/rust-lang/rust/tree/master/LICENSES")
     [void]$notices.AppendLine('LLVM compiler runtime/unwinder: Apache-2.0 WITH LLVM-exception; https://github.com/llvm/llvm-project/blob/main/LICENSE.TXT')
+    [void]$notices.AppendLine((Get-Content -LiteralPath (Join-Path $projectRoot 'assets/iperf3/NOTICES.txt') -Raw))
     [System.IO.File]::WriteAllText((Join-Path $projectRoot 'assets/THIRD_PARTY_NOTICES.txt'),$notices.ToString(),[System.Text.UTF8Encoding]::new($false))
     Write-Output 'Generated assets/THIRD_PARTY_NOTICES.txt'
 } finally { Pop-Location }

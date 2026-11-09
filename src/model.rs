@@ -148,6 +148,33 @@ pub struct SpeedDetails {
     pub latency_note: String,
     pub raw_text: String,
     pub error: String,
+    pub iperf: Option<IperfDetails>,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct IperfDetails {
+    pub version: String,
+    pub host: String,
+    pub location: String,
+    pub selection: String,
+    pub selected_streams: u16,
+    pub duration_seconds: u32,
+    pub auto_tune: bool,
+    pub phases: Vec<IperfPhase>,
+    pub attempts: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IperfPhase {
+    pub direction: String,
+    pub calibration: bool,
+    pub streams: u16,
+    pub port: u16,
+    pub seconds: f64,
+    pub receiver_mbps: f64,
+    pub receiver_bytes: u64,
+    pub retransmits: Option<u64>,
+    pub local_cpu_percent: Option<f64>,
+    pub remote_cpu_percent: Option<f64>,
 }
 fn default_provider() -> String {
     "WiFiman".into()
@@ -159,10 +186,35 @@ impl SpeedRun {
             ("upload", self.upload_mbps),
             ("ping", self.ping_ms),
         ] {
+            if name == "ping" && self.provider == "iPerf3 / Clouvider" && value.is_none() {
+                continue;
+            }
             anyhow::ensure!(
                 value.is_some_and(|v| v.is_finite() && v >= 0.0),
                 "Invalid {name} measurement"
             );
+        }
+        if self.provider == "iPerf3 / Clouvider" {
+            let details = self
+                .details
+                .iperf
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("Missing iPerf metadata"))?;
+            anyhow::ensure!(
+                (1..=128).contains(&details.selected_streams),
+                "Invalid iPerf stream count"
+            );
+            for direction in ["download", "upload"] {
+                anyhow::ensure!(
+                    details.phases.iter().any(|phase| !phase.calibration
+                        && phase.direction == direction
+                        && phase.receiver_mbps.is_finite()
+                        && phase.receiver_mbps >= 0.
+                        && phase.seconds.is_finite()
+                        && phase.seconds > 0.),
+                    "Missing completed iPerf {direction} phase"
+                );
+            }
         }
         for value in [
             self.details.download_latency_ms,
