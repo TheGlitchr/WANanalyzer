@@ -16,6 +16,8 @@ Default **Auto tune** runs sequential four-second download trials at 8, 16, 32, 
 
 Turn off Auto tune to choose 1–128 streams. The manual count still gets a short availability test before the longer phases. The duration control requests 10–60 measured seconds per direction. Only one iPerf process/test runs at a time; no competing website tests start during it. Every run has a four-minute overall deadline.
 
+The bundled engine's `MAX_STREAMS` is 128, so this reaches its maximum parallel stream count within one test. It does not start additional simultaneous tests on other public ports to exceed that limit. [ESnet 3.22 limits](https://github.com/esnet/iperf/blob/3.22/src/iperf.h).
+
 The client uses TCP `-P`, download `-R`, JSON `-J`, an ordinary 128 KiB I/O buffer, IPv4, bounded connection/receive timeouts, and `-O` warm-up exclusion. TCP is uncapped by default. It preserves OS TCP window autotuning and does not change adapter settings, registry values, congestion control, system security, or process priority. Unsupported Windows zero-copy/Linux pacing switches are not enabled.
 
 A failed second full-duration profile is logged without discarding a valid first download. All phases remain in history. A successful port is reused across phases until it becomes busy/unavailable, reducing comparisons between different server instances.
@@ -35,5 +37,6 @@ The binary archive's SHA256 and GitHub build-provenance attestation were verifie
 - [Clouvider's published speed-test hosts, ports, and capacity](https://as62240.net/speedtest)
 - [Clouvider's throughput troubleshooting guidance](https://www.clouvider.com/knowledge_base/i-am-not-getting-10gbps-why/)
 - [ESnet command reference](https://software.es.net/iperf/invoking.html) and [Windows/multithreading FAQ](https://software.es.net/iperf/faq.html)
+- [Microsoft's Windows benchmarking caveats](https://techcommunity.microsoft.com/blog/networkingblog/three-reasons-why-you-should-not-use-iperf3-on-windows/4117876)
 - [Windows build and provenance process](https://github.com/userdocs/iperf3-static/tree/3.22)
 - [Cygwin licensing and linking exception](https://cygwin.com/licensing.html)
