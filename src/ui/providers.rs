@@ -12,7 +12,7 @@ impl App {
             }
         });
         ui.label(
-            "Four providers, one result format. Every attempt is logged; one test runs at a time.",
+            "Five test methods, one history. Every attempt is logged; one test runs at a time.",
         );
         ui.small("Loaded latency is delay while the circuit is busy. Provider latency uses its own path, separate from native ICMP monitoring.");
         ui.add_space(8.);
@@ -24,7 +24,7 @@ impl App {
             content.min.x = log.right() + 12.;
             self.speed_log(ui, log);
         }
-        if self.active_speed.is_some() && self.browser.is_none() {
+        if self.active_speed.is_some() && self.browser.is_none() && self.iperf.is_none() {
             ui.scope_builder(
                 egui::UiBuilder::new()
                     .id_salt("unsaved-speed")
@@ -62,7 +62,7 @@ impl App {
                                 246.,
                             );
                             let origin = ui.cursor().min;
-                            for index in 0..4 {
+                            for (index, provider) in PROVIDERS.iter().enumerate() {
                                 let position = origin
                                     + Vec2::new(
                                         (index % columns) as f32 * (card.x + gap),
@@ -71,14 +71,23 @@ impl App {
                                 self.provider_card(
                                     ui,
                                     index,
-                                    egui::Rect::from_min_size(position, card),
+                                    egui::Rect::from_min_size(
+                                        position,
+                                        if *provider == Provider::Iperf {
+                                            Vec2::new(ui.available_width(), 310.)
+                                        } else {
+                                            card
+                                        },
+                                    ),
                                 );
                             }
                             ui.advance_cursor_after_rect(egui::Rect::from_min_size(
                                 origin,
                                 Vec2::new(
                                     card.x * columns as f32 + gap * (columns - 1) as f32,
-                                    card.y * (4 / columns) as f32 + gap * (4 / columns - 1) as f32,
+                                    card.y * PROVIDERS.len().div_ceil(columns) as f32
+                                        + gap * (PROVIDERS.len().div_ceil(columns) - 1) as f32
+                                        + 64.,
                                 ),
                             ));
                         });
@@ -224,15 +233,17 @@ impl App {
 
     fn provider_card(&mut self, ui: &mut egui::Ui, index: usize, rect: egui::Rect) {
         let provider = PROVIDERS[index];
-        let active = self
-            .browser
-            .as_ref()
-            .is_some_and(|browser| browser.provider() == provider);
-        let saving = active
-            && self
+        let active = (provider == Provider::Iperf && self.iperf.is_some())
+            || self
                 .browser
                 .as_ref()
-                .is_some_and(|browser| browser.is_saving());
+                .is_some_and(|browser| browser.provider() == provider);
+        let saving = active
+            && (self.iperf.as_ref().is_some_and(|task| task.is_saving())
+                || self
+                    .browser
+                    .as_ref()
+                    .is_some_and(|browser| browser.is_saving()));
         let latest = self
             .speeds
             .iter()
@@ -241,7 +252,12 @@ impl App {
         let completed = latest
             .as_ref()
             .filter(|run| run.status.starts_with("completed"));
-        let phase = if active {
+        let phase = if active && provider == Provider::Iperf {
+            self.iperf
+                .as_ref()
+                .map(|task| task.phase())
+                .unwrap_or_default()
+        } else if active {
             self.browser
                 .as_ref()
                 .map(|browser| browser.phase().to_string())
@@ -285,7 +301,7 @@ impl App {
                         ui.spinner();
                     } else if ui
                         .add_enabled(
-                            self.browser.is_none() && self.active_speed.is_none(),
+                            self.browser.is_none() && self.iperf.is_none() && self.active_speed.is_none(),
                             egui::Button::new("Run"),
                         )
                         .clicked()
@@ -298,12 +314,26 @@ impl App {
                         self.speed_details = Some(run.id.clone());
                     }
                 });
+                if provider == Provider::Iperf {
+                    ui.add_enabled_ui(!active && self.active_speed.is_none(), |ui| {
+                        ui.horizontal_wrapped(|ui| {
+                            ui.checkbox(&mut self.iperf_options.auto_tune, "Auto tune 8–128 streams");
+                            if !self.iperf_options.auto_tune {
+                                ui.label("Streams");
+                                ui.add(egui::DragValue::new(&mut self.iperf_options.streams).range(1..=128));
+                            }
+                            ui.label("Seconds per direction");
+                            ui.add(egui::DragValue::new(&mut self.iperf_options.seconds).range(10..=60));
+                        });
+                    });
+                }
                 line(
                     ui,
                     if phase.is_empty() {
                         match provider {
                             Provider::Devina => "Speed and latency under download/upload load",
                             Provider::Fast => "Netflix CDN speed and loaded latency",
+                            Provider::Iperf => "Nearest responsive Clouvider location | automatic port selection",
                             _ => "Download, upload and provider latency",
                         }
                         .into()
@@ -334,6 +364,16 @@ impl App {
                     );
                 });
                 ui.separator();
+                if provider == Provider::Iperf {
+                    result_row(ui, "Server selection latency", format!("{} ms", fmt(completed.and_then(|run| run.ping_ms))));
+                    if let Some(details) = latest.as_ref().and_then(|run| run.details.iperf.as_ref()) {
+                        result_row(ui, "Measured streams", details.selected_streams.to_string());
+                        line(ui, format!("Clouvider {} | {} seconds per direction", details.location, details.duration_seconds), MUTED);
+                    }
+                    ui.small("Uses full bandwidth and can transfer several GB. Auto tune takes about 75 seconds at default duration.");
+                    ui.small("Clouvider: 10 Gbps best effort. More streams cannot guarantee line rate. ICMP monitoring continues.");
+                    return;
+                }
                 result_row(
                     ui,
                     if provider == Provider::WiFiman {
@@ -431,7 +471,7 @@ impl App {
             egui::ScrollArea::vertical().id_salt("result-details-scroll").max_height((ctx.content_rect().height()-190.).clamp(100.,500.)).show(ui,|ui|{
                 result_row(ui,"Download",format!("{} Mbps",fmt(run.download_mbps)));
                 result_row(ui,"Upload",format!("{} Mbps",fmt(run.upload_mbps)));
-                result_row(ui,if run.provider=="WiFiman"{"Provider ping"}else{"Idle latency"},format!("{} ms",fmt(run.ping_ms)));
+                result_row(ui,if run.provider=="WiFiman"{"Provider ping"}else if run.provider==crate::iperf::PROVIDER{"Server selection latency"}else{"Idle latency"},format!("{} ms",fmt(run.ping_ms)));
                 result_row(ui,"Download-loaded latency",loaded(run.details.download_latency_ms,run.details.download_increase_ms));
                 result_row(ui,"Upload-loaded latency",loaded(run.details.upload_latency_ms,run.details.upload_increase_ms));
                 result_row(ui,"Loaded (unspecified)",format!("{} ms",fmt(run.details.loaded_latency_ms)));
@@ -441,6 +481,21 @@ impl App {
                 if !run.details.assessment.is_empty(){ui.label(&run.details.assessment);}
                 if !run.server.is_empty(){ui.label(format!("Server: {}",run.server));}
                 if !run.details.error.is_empty(){ui.colored_label(RED,&run.details.error);}
+                if let Some(details) = &run.details.iperf {
+                    ui.separator();
+                    ui.strong(format!("iPerf3 {} | {} measured streams", details.version, details.selected_streams));
+                    ui.label(format!("Requested duration: {} s per direction | {}", details.duration_seconds, if details.auto_tune {"automatic stream tuning"} else {"fixed streams"}));
+                    ui.collapsing("Stream trials and measured phases", |ui| {
+                        for phase in &details.phases {
+                            ui.label(format!("{} {} | P{} | port {} | {:.1} Mbps | {:.1} s | {} bytes", if phase.calibration {"Trial"} else {"Measured"}, phase.direction, phase.streams, phase.port, phase.receiver_mbps, phase.seconds, phase.receiver_bytes));
+                            ui.small(format!("Sender retransmits: {} | CPU local {}%, remote {}%", phase.retransmits.map(|n| n.to_string()).unwrap_or_else(|| "--".into()), fmt(phase.local_cpu_percent), fmt(phase.remote_cpu_percent)));
+                        }
+                    });
+                    ui.collapsing("Server ranking and port attempts", |ui| {
+                        ui.label(&details.selection);
+                        for attempt in &details.attempts { ui.label(attempt); }
+                    });
+                }
                 ui.collapsing("Captured provider text",|ui|{ui.add(egui::Label::new(&run.details.raw_text).selectable(true).wrap());});
                 ui.small(format!("Capture: {}",run.capture_method));
             });

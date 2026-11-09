@@ -47,6 +47,7 @@ pub(super) fn parse(provider: Provider, snapshot: &Snapshot) -> Result<Capture> 
         ..Default::default()
     };
     let mut result = match provider {
+        Provider::Iperf => anyhow::bail!("iPerf uses native process results, not browser capture"),
         Provider::WiFiman => {
             let mut result = super::parse_result(&snapshot.text)?;
             result.details = details;

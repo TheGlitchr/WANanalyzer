@@ -34,7 +34,7 @@ fn run() -> Result<()> {
                 .as_deref()
                 .and_then(wanalyzer::speed::Provider::from_key)
                 .is_some(),
-            "Use --speed-check wifiman, speedtest, fast, or devina"
+            "Use --speed-check wifiman, speedtest, fast, devina, or iperf"
         );
     }
     let mut directory = arg("--data-dir").map(PathBuf::from).unwrap_or_else(|| {

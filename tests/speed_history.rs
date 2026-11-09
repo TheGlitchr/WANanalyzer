@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, time::Duration};
 use wanalyzer::{
-    model::{SpeedDetails, SpeedRun, now_ms},
+    model::{IperfDetails, IperfPhase, SpeedDetails, SpeedRun, now_ms},
     storage::{Store, Write},
 };
 
@@ -64,7 +64,13 @@ fn all_provider_results_and_loaded_latency_survive_restart_and_json_export() {
     let directory = temp.join(format!("wanalyzer-provider-test-{}", uuid::Uuid::new_v4()));
     let store = Store::open(&directory, "providers").unwrap();
     let mut expected = BTreeMap::new();
-    for provider in ["WiFiman", "Speedtest.net", "FAST.com", "Devina bufferbloat"] {
+    for provider in [
+        "WiFiman",
+        "Speedtest.net",
+        "FAST.com",
+        "Devina bufferbloat",
+        "iPerf3 / Clouvider",
+    ] {
         let mut result = run(provider);
         store.speed(result.clone()).unwrap();
         result.status = "completed".into();
@@ -81,6 +87,32 @@ fn all_provider_results_and_loaded_latency_survive_restart_and_json_export() {
             result.details.download_increase_ms = Some(28.);
             result.details.upload_increase_ms = Some(48.);
         }
+        if provider == "iPerf3 / Clouvider" {
+            result.details.iperf = Some(IperfDetails {
+                version: "3.22".into(),
+                selected_streams: 32,
+                duration_seconds: 20,
+                host: "test.example".into(),
+                location: "Example".into(),
+                phases: ["download", "upload"]
+                    .into_iter()
+                    .map(|direction| IperfPhase {
+                        direction: direction.into(),
+                        calibration: false,
+                        streams: 32,
+                        port: 5207,
+                        seconds: 20.1,
+                        receiver_mbps: if direction == "download" { 850. } else { 700. },
+                        receiver_bytes: 2_000_000_000,
+                        retransmits: Some(3),
+                        local_cpu_percent: Some(35.),
+                        remote_cpu_percent: Some(22.),
+                    })
+                    .collect(),
+                ..Default::default()
+            });
+        }
+        result.validate_result().unwrap();
         store.speed(result.clone()).unwrap();
         expected.insert(provider.to_string(), result.details.clone());
         // Late cancellation must never replace an already committed result.
@@ -91,7 +123,7 @@ fn all_provider_results_and_loaded_latency_survive_restart_and_json_export() {
     close(&store);
     let reopened = Store::open(&directory, "restart").unwrap();
     let results = reopened.speeds().unwrap();
-    assert_eq!(results.len(), 4);
+    assert_eq!(results.len(), 5);
     for result in results {
         assert_eq!(result.status, "completed");
         assert_eq!(result.download_mbps, Some(850.));
@@ -102,7 +134,7 @@ fn all_provider_results_and_loaded_latency_survive_restart_and_json_export() {
     let json: serde_json::Value =
         serde_json::from_slice(&std::fs::read(destination).unwrap()).unwrap();
     let exported: Vec<SpeedRun> = serde_json::from_value(json["speed_tests"].clone()).unwrap();
-    assert_eq!(exported.len(), 4);
+    assert_eq!(exported.len(), 5);
     for result in exported {
         assert_eq!(result.details, expected[&result.provider]);
     }

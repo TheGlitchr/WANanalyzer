@@ -8,5 +8,9 @@
 *.dll binary
 *.ico binary
 *.png binary
+*.exe binary
+*.xz binary
+*.gz binary
+assets/iperf3/NOTICES.txt -whitespace
 assets/THIRD_PARTY_NOTICES.txt -whitespace
 assets/webview2-notices/LICENSE.txt -whitespace
