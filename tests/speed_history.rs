@@ -142,3 +142,77 @@ fn all_provider_results_and_loaded_latency_survive_restart_and_json_export() {
     assert!(directory.starts_with(&temp));
     std::fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn high_precision_iperf_measurements_survive_database_restart_and_export_exactly() {
+    let temp = std::env::temp_dir();
+    let directory = temp.join(format!(
+        "wanalyzer-iperf-precision-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let store = Store::open(&directory, "precision").unwrap();
+    let mut expected = BTreeMap::new();
+    let mut seed = 0x5a17_4f09_a831_286b_u64;
+    for _ in 0..48 {
+        seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+        // Finite, physically plausible Mbps values with nontrivial mantissas.
+        let rate = f64::from_bits(0x4080_0000_0000_0000 | (seed & 0x000f_ffff_ffff_ffff));
+        let seconds = 20. + rate / 100_000.;
+        let mut result = run("iPerf3 / Clouvider");
+        result.status = "completed".into();
+        result.finished_ms = Some(now_ms());
+        result.download_mbps = Some(rate);
+        result.upload_mbps = Some(rate / 1.17);
+        result.ping_ms = Some(rate / 30.);
+        result.session = "precision".into();
+        result.details.iperf = Some(IperfDetails {
+            version: "3.22".into(),
+            selected_streams: 32,
+            duration_seconds: 20,
+            phases: ["download", "upload"]
+                .into_iter()
+                .map(|direction| IperfPhase {
+                    direction: direction.into(),
+                    calibration: false,
+                    streams: 32,
+                    port: 5204,
+                    seconds,
+                    receiver_mbps: if direction == "download" {
+                        rate
+                    } else {
+                        rate / 1.17
+                    },
+                    receiver_bytes: 2_000_000_000,
+                    retransmits: Some(7),
+                    local_cpu_percent: Some(rate / 21.),
+                    remote_cpu_percent: Some(rate / 27.),
+                })
+                .collect(),
+            ..Default::default()
+        });
+        store.speed(result.clone()).unwrap();
+        expected.insert(result.id.clone(), result);
+    }
+    close(&store);
+    let reopened = Store::open(&directory, "restart").unwrap();
+    for actual in reopened.speeds().unwrap() {
+        let expected = &expected[&actual.id];
+        assert_eq!(actual.download_mbps, expected.download_mbps);
+        assert_eq!(actual.upload_mbps, expected.upload_mbps);
+        assert_eq!(actual.ping_ms, expected.ping_ms);
+        assert_eq!(actual.details, expected.details);
+    }
+    let destination = directory.join("precision.json");
+    reopened.export("precision", &destination, true).unwrap();
+    let json: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(destination).unwrap()).unwrap();
+    let exported: Vec<SpeedRun> = serde_json::from_value(json["speed_tests"].clone()).unwrap();
+    assert_eq!(exported.len(), expected.len());
+    for actual in exported {
+        assert_eq!(actual.details, expected[&actual.id].details);
+        assert_eq!(actual.download_mbps, expected[&actual.id].download_mbps);
+    }
+    close(&reopened);
+    assert!(directory.starts_with(&temp));
+    std::fs::remove_dir_all(directory).unwrap();
+}

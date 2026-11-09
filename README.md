@@ -89,7 +89,7 @@ For focused diagnostics without a GUI:
 
 ## Implementation status and remaining qualification
 
-Implemented: Windows ICMP worker pool, paced scheduler (40 probes/s, at most 32 in flight), automatic targets/gateway, repeated TTL measurements, per-hop PL tracking, pause/resume, native charts, settings, SQLite batching/recovery, exports, four provider adapters, and durable speed/loaded-latency results in a uniform native UI.
+Implemented: Windows ICMP worker pool, paced scheduler (40 probes/s, at most 32 in flight), automatic targets/gateway, repeated TTL measurements, per-hop PL tracking, pause/resume, native charts, settings, SQLite batching/recovery, exports, four browser-provider adapters, iPerf3/Clouvider stream tuning, and durable speed/loaded-latency results in a uniform native UI.
 
 Differences from the full proposed v1: IPv4/x64 only; network changes are reconciled by polling every five seconds rather than native notifications; DNS uses a background Windows resolver; historical charts use the latest segment, and long-range rollups are pending. Data-folder recovery UX, comprehensive suspension/cancellation qualification, 24-hour soak, Windows 10 clean-VM validation, code signing, graphics compatibility, and the full dependency/license inventory still need release qualification.
 

@@ -31,6 +31,7 @@ The first release is a portable executable for Windows 10 and Windows 11. It nee
 | Four native provider cards | WiFiman, Speedtest.net, FAST.com, and Devina bufferbloat share a native result layout with individual Run actions. |
 | Individual execution | One provider runs at a time in a background browser. No throughput tests start on app launch. |
 | Shared speed log | Every provider attempt is logged. Fixed single-line rows open full details; Devina includes idle and both loaded-latency phases. |
+| iPerf3 / Clouvider | Add a fifth native method, select the lowest-latency available Clouvider location, retry published ports 5200–5209, and compare parallel download stream counts to maximize sustained throughput. |
 | GitHub publication | Public WANanalyzer repository with the MIT license and a portable Windows preview download. |
 
 ### Proposed defaults, subject to product review
@@ -148,7 +149,7 @@ The design may leave extension points for later features, but they must not dela
 ### FR-07 — Provider execution and logging
 
 - Provide a local speed-test panel immediately; initialize the provider/browser only after user action.
-- Present four native Run cards with common fields. Genuine provider pages execute in a hidden WebView2 backend, and provider-specific DOM adapters capture their completed measurements.
+- Present five native Run cards with common fields. Four genuine provider pages execute in a hidden WebView2 backend, and provider-specific DOM adapters capture their completed measurements. iPerf3 uses a bundled engine with supervised process lifetime, automatic Clouvider selection, stream calibration/full-download comparisons, separate upload, and structured logging; see [iPerf execution and tuning](IPERF.md).
 - Provide an optional same-window provider view for notices, consent, interaction, or troubleshooting. Never require a separate browser window or an HTML iframe. Keep native monitoring independent.
 - Check the existing WebView2 Runtime. If unavailable, log the failed attempt and leave native monitoring active.
 - Make provider notices and controls accessible through the optional view. Ordinary subsequent runs do not require a repeated app permission dialog.

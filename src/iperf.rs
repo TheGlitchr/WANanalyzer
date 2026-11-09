@@ -937,14 +937,20 @@ mod tests {
         // Monitor owns writer shutdown; reopening verifies actual restart durability.
         drop(store);
         let reopened = Store::open(&directory, "iperf-validation-restart").unwrap();
+        let saved = reopened
+            .speeds()
+            .unwrap()
+            .into_iter()
+            .find(|run| run.id == result.run.id)
+            .expect("Completed run missing after restart");
+        assert_eq!(saved.status, "completed");
+        assert_eq!(
+            saved.details.iperf, result.run.details.iperf,
+            "Structured iPerf precision changed after restart"
+        );
         assert!(
-            reopened
-                .speeds()
-                .unwrap()
-                .iter()
-                .any(|run| run.id == result.run.id
-                    && run.status == "completed"
-                    && run.details == result.run.details)
+            saved.details == result.run.details,
+            "Other captured details changed after restart"
         );
         let (tx, rx) = bounded(1);
         reopened.tx.send(Write::Close(tx)).unwrap();
