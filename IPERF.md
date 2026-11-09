@@ -18,6 +18,8 @@ Turn off Auto tune to choose 1–128 streams. The manual count still gets a shor
 
 The client uses TCP `-P`, download `-R`, JSON `-J`, an ordinary 128 KiB I/O buffer, IPv4, bounded connection/receive timeouts, and `-O` warm-up exclusion. TCP is uncapped by default. It preserves OS TCP window autotuning and does not change adapter settings, registry values, congestion control, system security, or process priority. Unsupported Windows zero-copy/Linux pacing switches are not enabled.
 
+If the first full download falls more than 15% below the strongest short trial, Auto tune can compare one additional full-duration profile using the best different trial count, provided enough time remains for upload. It retains the faster of those full measurements and uploads with that count. All phases remain in history; calibration spikes are never substituted for full results. A successful port is reused across phases until it becomes busy/unavailable, reducing comparisons between different server instances.
+
 More streams can fill a latency-bound path or use more CPU cores, but may eventually reduce throughput. iPerf3 3.16+ uses a thread per stream; an older/limited server, CPU, NIC, Wi-Fi airtime, WAN path, or shared server can still be the bottleneck. Clouvider advertises **10 Gbps best effort**, not dedicated capacity. This feature cannot guarantee line rate, exceed a physical link limit, or establish that the nearest server is the fastest on every run. iPerf3 on Windows uses Cygwin and is not an officially supported ESnet platform; very high-speed Windows results need independent qualification.
 
 ## History, process lifetime, and portability

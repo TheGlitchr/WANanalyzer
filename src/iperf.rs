@@ -614,6 +614,21 @@ fn choose_streams(phases: &[IperfPhase]) -> Option<u16> {
         .map(|p| p.streams)
         .min()
 }
+fn alternate_streams(phases: &[IperfPhase], chosen: u16, measured_mbps: f64) -> Option<u16> {
+    let best = phases
+        .iter()
+        .filter(|p| p.calibration && p.direction == "download")
+        .map(|p| p.receiver_mbps)
+        .max_by(f64::total_cmp)?;
+    if measured_mbps >= best * 0.85 {
+        return None;
+    }
+    phases
+        .iter()
+        .filter(|p| p.calibration && p.direction == "download" && p.streams != chosen)
+        .max_by(|a, b| a.receiver_mbps.total_cmp(&b.receiver_mbps))
+        .map(|p| p.streams)
+}
 fn execute(
     directory: &Path,
     run: &mut SpeedRun,
@@ -623,6 +638,7 @@ fn execute(
 ) -> Result<()> {
     options.validate()?;
     let deadline = Instant::now() + Duration::from_secs(240);
+    check(cancel, deadline)?;
     let exe = ensure_runtime(directory)?;
     let candidates = discover(cancel, deadline)?;
     let ranking = candidates
@@ -694,7 +710,7 @@ fn execute(
                 }
             }
         }
-        let streams = if options.auto_tune {
+        let mut streams = if options.auto_tune {
             choose_streams(&runner.metadata.phases).context("No successful stream calibration")?
         } else {
             options.streams
@@ -702,6 +718,30 @@ fn execute(
         runner.metadata.selected_streams = streams;
         let download = runner.measure(&server, streams, options.seconds, false, true)?;
         run.download_mbps = Some(download.receiver_mbps);
+        // A short trial can overestimate sustained speed. Compare one alternate
+        // full-duration profile when throughput drops markedly, leaving time for upload.
+        if options.auto_tune
+            && let Some(alternate) =
+                alternate_streams(&runner.metadata.phases, streams, download.receiver_mbps)
+            && runner.deadline.saturating_duration_since(Instant::now())
+                > Duration::from_secs(2 * (u64::from(options.seconds) + 14))
+        {
+            match runner.measure(&server, alternate, options.seconds, false, true) {
+                Ok(recheck) if recheck.receiver_mbps > download.receiver_mbps => {
+                    streams = alternate;
+                    runner.metadata.selected_streams = streams;
+                    run.download_mbps = Some(recheck.receiver_mbps);
+                }
+                Ok(_) => {}
+                Err(error) => {
+                    runner
+                        .metadata
+                        .attempts
+                        .push(format!("Sustained-speed recheck skipped: {error:#}"));
+                    check(cancel, deadline)?;
+                }
+            }
+        }
         let upload = runner.measure(&server, streams, options.seconds, false, false)?;
         run.upload_mbps = Some(upload.receiver_mbps);
         Ok(())
@@ -749,6 +789,8 @@ mod tests {
             trials.push(trial);
         }
         assert_eq!(choose_streams(&trials), Some(16));
+        assert_eq!(alternate_streams(&trials, 16, 700.), Some(64));
+        assert_eq!(alternate_streams(&trials, 16, 950.), None);
         assert_eq!(choose_streams(&[]), None);
     }
     #[test]

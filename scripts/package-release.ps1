@@ -30,7 +30,9 @@ foreach ($source in @('iperf-3.22.tar.gz','cygwin-3.6.10-1-src.tar.xz')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "assets/iperf3/sources/$source") -Destination (Join-Path $staging 'assets/iperf3/sources')
 }
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive -Force
-$hashLines = @((Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant() + '  WANanalyzer.exe',
-    (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path -Leaf $archive))
+$hashLines = @(
+    ((Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant() + '  WANanalyzer.exe')
+    ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path -Leaf $archive))
+)
 [System.IO.File]::WriteAllLines((Join-Path $projectRoot 'dist/SHA256SUMS.txt'), $hashLines, [System.Text.UTF8Encoding]::new($false))
 Write-Output $archive

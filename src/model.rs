@@ -210,6 +210,7 @@ impl SpeedRun {
                         && phase.direction == direction
                         && phase.receiver_mbps.is_finite()
                         && phase.receiver_mbps >= 0.
+                        && phase.seconds.is_finite()
                         && phase.seconds > 0.),
                     "Missing completed iPerf {direction} phase"
                 );
