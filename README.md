@@ -78,7 +78,7 @@ The current environment had GNU-host Rust but no C compiler. A project-local LLV
 
 The portable setup downloads pinned LLVM-MinGW from its official GitHub release, checks its published SHA256 when provided, and adds the Rust target. It assumes Rust/rustup is already installed. `.tools`, `target`, `artifacts`, generated logs, and release binaries are ignored by Git.
 
-After building, run `./scripts/package-release.ps1` to create the Windows x64 ZIP and `dist/SHA256SUMS.txt`. Packaging uses an explicit file list in a fresh staging directory and excludes runtime data. GitHub Actions also builds and tests the MSVC target and uploads the EXE, ZIP, and checksums as workflow artifacts.
+After building, run `./scripts/package-release.ps1` to create `dist/WANanalyzer-<version>-windows-x64.zip` and `dist/SHA256SUMS.txt`. The ZIP is versioned; the executable inside it and the standalone copy in `dist` are always named `WANanalyzer.exe`. The version defaults to `Cargo.toml`. To package an existing build, use `-Executable <path>`; packaging copies the same bytes to the canonical EXE and ZIP. Packaging uses an explicit file list in a fresh staging directory and excludes runtime data. Keep `dist/data` when updating or cleaning local releases to preserve settings and history. GitHub Actions also builds and tests the MSVC target and uploads the EXE, ZIP, and checksums as workflow artifacts.
 
 For focused diagnostics without a GUI:
 

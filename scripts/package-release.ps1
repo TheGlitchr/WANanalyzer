@@ -5,6 +5,9 @@ if (!$Version) { $Version = [regex]::Match((Get-Content -LiteralPath (Join-Path 
 if ($Version -notmatch '^\d+\.\d+\.\d+([.-][A-Za-z0-9.-]+)?$') { throw 'Invalid release version' }
 if (!$Executable) { $Executable = Join-Path $projectRoot 'dist/WANanalyzer.exe' }
 if (!(Test-Path -LiteralPath $Executable -PathType Leaf)) { throw 'Build dist/WANanalyzer.exe first, or pass -Executable' }
+$distribution = Join-Path $projectRoot 'dist'
+New-Item -ItemType Directory -Path $distribution -Force | Out-Null
+$portableExecutable = Join-Path $distribution 'WANanalyzer.exe'
 # Use a fresh staging directory so existing runtime data can never enter the ZIP.
 $staging = Join-Path $projectRoot ('artifacts/release-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
@@ -22,7 +25,7 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'assets/THIRD_PARTY_NOTICES.txt')
 foreach ($notice in @('LICENSE.txt','NOTICE.txt')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "assets/webview2-notices/$notice") -Destination (Join-Path $staging 'assets/webview2-notices')
 }
-$archive = Join-Path $projectRoot "dist/WANanalyzer-$Version-windows-x64.zip"
+$archive = Join-Path $distribution "WANanalyzer-$Version-windows-x64.zip"
 # Corresponding source and licenses for the embedded iPerf/Cygwin runtime.
 New-Item -ItemType Directory -Path (Join-Path $staging 'assets/iperf3/sources') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'assets/iperf3/NOTICES.txt') -Destination (Join-Path $staging 'assets/iperf3')
@@ -30,9 +33,12 @@ foreach ($source in @('iperf-3.22.tar.gz','cygwin-3.6.10-1-src.tar.xz')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "assets/iperf3/sources/$source") -Destination (Join-Path $staging 'assets/iperf3/sources')
 }
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive -Force
+# Publish the same staged bytes under the stable portable name, including when
+# -Executable points at a CI download or a versioned input outside dist.
+Copy-Item -LiteralPath (Join-Path $staging 'WANanalyzer.exe') -Destination $portableExecutable -Force
 $hashLines = @(
-    ((Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant() + '  WANanalyzer.exe')
+    ((Get-FileHash -LiteralPath $portableExecutable -Algorithm SHA256).Hash.ToLowerInvariant() + '  WANanalyzer.exe')
     ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + (Split-Path -Leaf $archive))
 )
-[System.IO.File]::WriteAllLines((Join-Path $projectRoot 'dist/SHA256SUMS.txt'), $hashLines, [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllLines((Join-Path $distribution 'SHA256SUMS.txt'), $hashLines, [System.Text.UTF8Encoding]::new($false))
 Write-Output $archive
